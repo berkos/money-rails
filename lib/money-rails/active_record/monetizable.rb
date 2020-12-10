@@ -209,7 +209,7 @@ module MoneyRails
 
         if MoneyRails::Configuration.preserve_user_input
           value_before_type_cast = instance_variable_get "@#{name}_money_before_type_cast"
-          if errors[name.to_sym].present?
+          if errors.has_key?(name.to_sym)
             result.define_singleton_method(:to_s) { value_before_type_cast }
             result.define_singleton_method(:format) { |_| value_before_type_cast }
           end
@@ -272,6 +272,16 @@ module MoneyRails
 
         # Save and return the new Money object
         instance_variable_set "@#{name}", money
+      end
+
+      def write_attribute(subunit_name, value)
+        if defined?(::ActiveRecord) && defined?(::ActiveRecord::VERSION) && ::ActiveRecord::VERSION::MAJOR == 6 && ::ActiveRecord::VERSION::MINOR >= 1
+          alias_subunit_name = subunit_name.to_s
+          alias_subunit_name = attribute_aliases[alias_subunit_name] || alias_subunit_name.to_s
+          _write_attribute(alias_subunit_name, value)
+        else
+          super
+        end
       end
 
       def currency_for(name, instance_currency_name, field_currency_name)
